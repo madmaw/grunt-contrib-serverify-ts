@@ -10,8 +10,8 @@
 
 var os = require('os');
 
-var borderStartValues = ">= :<;,)({}+";
-var borderEndValues = ">= :<;,)({}.+";
+var classNameStartValues = ">= :<;,)({}[]+";
+var classNameEndValues = ">= :<;,)({}[]+.";
 var localFileExtensions = [".js", ".js.map"];
 var dtsExtension = ".d.ts";
 
@@ -157,6 +157,25 @@ module.exports = function(grunt) {
                 var files = [];
 
                 // TODO look up the files from the reference file and add those in order
+                var reference = options.reference;
+                if( reference ) {
+                    if( grunt.file.exists(reference) ) {
+                        var referenceContent = grunt.file.read(reference);
+                        referenceContent.replace(/(\'|\").+\.ts(\'|\")/g, function(m) {
+                            // TODO use path relative to reference file
+                            var file = m.substring(1, m.length - 1);
+                            // exclude d.ts files
+                            if( !file.match(/\.d\.ts/g) ) {
+                                files.push(file);
+                            }
+                            return m;
+                        });
+                    } else {
+                        grunt.log.warn("reference file "+reference+" not found");
+                    }
+                }
+
+
                 f.src.forEach(function(filepath) {
                     if( files.indexOf(filepath) < 0 ) {
                         files.push(filepath);
@@ -201,17 +220,25 @@ module.exports = function(grunt) {
                     var requireName = library.requireName || moduleName;
                     var variableName = library.variableName || requireName;
                     var classNames = library.classNames;
+                    if( classNames == null ) {
+                        classNames = [];
+                    }
+                    // add the module name as that can be referred to directly
+                    if( moduleName ) {
+                        classNames.push({
+                            from: moduleName,
+                            to: null,
+                            endValues: classNameStartValues // can't end in a dot
+                        });
+                    }
 
                     var parseClassNames = library.parseClassNames;
                     if( parseClassNames ) {
                         var ambientDefinitionFile = library.ambientDefinitionFile;
                         if( ambientDefinitionFile && grunt.file.exists(ambientDefinitionFile) ) {
                             var librarySrc = grunt.file.read(ambientDefinitionFile);
-                            if( classNames == null ) {
-                                classNames = [];
-                            }
                             var currentModule = moduleName;
-                            librarySrc.replace(/(function|class|interface|module)\s+(\w|\.)+/g, function(m) {
+                            librarySrc.replace(/(function|class|interface|module|enum)\s+(\w|\.)+/g, function(m) {
                                 var nameIndex = m.lastIndexOf(' ');
                                 var name = m.substring(nameIndex+1);
                                 var type = m.substring(0, nameIndex).trim();
@@ -244,6 +271,15 @@ module.exports = function(grunt) {
                             var froms;
                             var to = variableName;
                             var classModuleName = className.moduleName;
+                            var localClassNameEndValues = className.endValues;
+                            var localClassNameStartValues = className.startValues;
+                            if( !localClassNameEndValues ) {
+                                localClassNameEndValues = classNameEndValues;
+                            }
+                            if( !localClassNameStartValues ) {
+                                localClassNameStartValues = classNameStartValues;
+                            }
+
                             if( classModuleName == null ) {
                                 classModuleName = moduleName;
                             }
@@ -273,7 +309,7 @@ module.exports = function(grunt) {
                                     var first = v.charAt(0);
                                     var last = v.charAt(v.length - 1);
                                     var result;
-                                    if( borderStartValues.indexOf(first) >= 0 && borderEndValues.indexOf(last) >= 0 ) {
+                                    if( localClassNameStartValues.indexOf(first) >= 0 && localClassNameEndValues.indexOf(last) >= 0 ) {
                                         result = first + to + last;
                                     } else {
                                         result = v;
