@@ -1,0 +1,41 @@
+{
+    "name": "grunt-contrib-serverify-ts",
+    "description": "Task to turn your client-side TypeScript libraries into node friendly equivalents",
+    "version": "0.1.32",
+    "homepage": "https://github.com/madmaw/grunt-contrib-serverify-ts",
+    "author": {
+        "name": "Chris Glover",
+        "email": "chris.glover@gmail.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/madmaw/grunt-contrib-serverify-ts.git"
+    },
+    "bugs": {
+        "url": "https://github.com/madmaw/grunt-contrib-serverify-ts/issues"
+    },
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "https://github.com/madmaw/grunt-contrib-serverify-ts/blob/master/LICENSE-MIT"
+        }
+    ],
+    "engines": {
+        "node": ">= 0.8.0"
+    },
+    "scripts": {
+        "test": "grunt test"
+    },
+    "devDependencies": {
+        "grunt-contrib-jshint": "^0.9.2",
+        "grunt-contrib-clean": "^0.5.0",
+        "grunt-contrib-nodeunit": "^0.3.3",
+        "grunt": "~0.4.5"
+    },
+    "peerDependencies": {
+        "grunt": "~0.4.5"
+    },
+    "keywords": [
+        "gruntplugin"
+    ]
+}
