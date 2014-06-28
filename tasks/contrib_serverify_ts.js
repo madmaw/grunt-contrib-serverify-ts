@@ -10,7 +10,7 @@
 
 var os = require('os');
 
-var classNameStartValues = ">= :<;,)({}[]+";
+var classNameStartValues = "\n\r>= :<;,)({}[]+";
 var classNameEndValues = ">= :<;,)({}[]+.";
 var localFileExtensions = [".js", ".js.map", ".ts"];
 var dtsExtension = ".d.ts";
@@ -303,7 +303,7 @@ module.exports = function(grunt) {
                             for( var k in froms ) {
                                 var from = froms[k];
                                 var escaped = from.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-                                var regex = new RegExp('.' + escaped + '.', 'g');
+                                var regex = new RegExp('(\r|\n|.)' + escaped + '.', 'g');
                                 src = src.replace(regex, function(v) {
                                     // ensure white space is on both sides of value
                                     var first = v.charAt(0);
