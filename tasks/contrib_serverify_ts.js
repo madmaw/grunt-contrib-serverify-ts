@@ -12,7 +12,7 @@ var os = require('os');
 
 var classNameStartValues = ">= :<;,)({}[]+";
 var classNameEndValues = ">= :<;,)({}[]+.";
-var localFileExtensions = [".js", ".js.map"];
+var localFileExtensions = [".js", ".js.map", ".ts"];
 var dtsExtension = ".d.ts";
 
 module.exports = function(grunt) {
