@@ -238,7 +238,7 @@ module.exports = function(grunt) {
                         if( ambientDefinitionFile && grunt.file.exists(ambientDefinitionFile) ) {
                             var librarySrc = grunt.file.read(ambientDefinitionFile);
                             var currentModule = moduleName;
-                            librarySrc.replace(/(function|class|interface|module|enum)\s+(\w|\.)+/g, function(m) {
+                            librarySrc.replace(/(function|class|interface|module|enum|declare\s+var)\s+(\w|\$|\.)+/g, function(m) {
                                 var nameIndex = m.lastIndexOf(' ');
                                 var name = m.substring(nameIndex+1);
                                 var type = m.substring(0, nameIndex).trim();
