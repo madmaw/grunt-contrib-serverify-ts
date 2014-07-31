@@ -1,7 +1,7 @@
 {
     "name": "grunt-contrib-serverify-ts",
     "description": "Task to turn your client-side TypeScript libraries into node friendly equivalents",
-    "version": "0.1.43",
+    "version": "0.1.47",
     "homepage": "https://github.com/madmaw/grunt-contrib-serverify-ts",
     "author": {
         "name": "Chris Glover",

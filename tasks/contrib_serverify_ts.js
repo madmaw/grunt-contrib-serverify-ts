@@ -11,7 +11,7 @@
 var os = require('os');
 
 var classNameStartValues = "\n\r>= :<;,)({}[]+";
-var classNameEndValues = ">= :<;,)({}[]+.";
+var classNameEndValues = "\n\r>= :<;,)({}[]+.";
 var localFileExtensions = [".js", ".js.map", ".ts"];
 var dtsExtension = ".d.ts";
 
@@ -32,20 +32,20 @@ module.exports = function(grunt) {
             ],
             libraries: [
                 /*
-                {
-                    ambientDefinitionFile: "somePath", // only required for a rewrite
-                    moduleName: "a.b.c", //  either classNames or moduleName must be specified, if both are specified then the module name will be prefixed onto the class names
-                    requireName: "myModule", // required, defaults to moduleName if specified
-                    variableName: "myVariable": // the name of the variable used in the code, defaults to requireName
-                    classNames: [
-                        {
-                            from: "D",
-                            to: "E"
-                        },
-                        "F"
-                    ]
-                }
-                */
+                 {
+                 ambientDefinitionFile: "somePath", // only required for a rewrite
+                 moduleName: "a.b.c", //  either classNames or moduleName must be specified, if both are specified then the module name will be prefixed onto the class names
+                 requireName: "myModule", // required, defaults to moduleName if specified
+                 variableName: "myVariable": // the name of the variable used in the code, defaults to requireName
+                 classNames: [
+                 {
+                 from: "D",
+                 to: "E"
+                 },
+                 "F"
+                 ]
+                 }
+                 */
             ]
         });
         var replacements = options.replacements;
@@ -192,17 +192,17 @@ module.exports = function(grunt) {
                         return true;
                     }
                 }).map(function(filepath) {
-                    // Read file source.
-                    var result = '//' + filepath + os.EOL;
-                    var filesrc = grunt.file.read(filepath);
-                    // add in export statements
-                    for( var i in replacements ) {
-                        var replacement = replacements[i];
-                        filesrc = filesrc.replace(replacement.from, replacement.to);
-                    }
-                    result += filesrc;
-                    return result;
-                }).join(grunt.util.normalizelf(os.EOL));
+                        // Read file source.
+                        var result = '//' + filepath + os.EOL;
+                        var filesrc = grunt.file.read(filepath);
+                        // add in export statements
+                        for( var i in replacements ) {
+                            var replacement = replacements[i];
+                            filesrc = filesrc.replace(replacement.from, replacement.to);
+                        }
+                        result += filesrc;
+                        return result;
+                    }).join(grunt.util.normalizelf(os.EOL));
 
                 var prefix = "";
                 // add in the references
@@ -220,6 +220,7 @@ module.exports = function(grunt) {
                     var requireName = library.requireName || moduleName;
                     var variableName = library.variableName || requireName;
                     var classNames = library.classNames;
+                    var unsupportedPlatforms = library.unsupportedPlatforms;
                     if( classNames == null ) {
                         classNames = [];
                     }
@@ -233,6 +234,11 @@ module.exports = function(grunt) {
                     }
 
                     var parseClassNames = library.parseClassNames;
+                    var parseClassNamesRewriter = library.parseClassNamesRewriter;
+                    var parseClassNamesQualified = library.parseClassNamesQualified;
+                    if( parseClassNames == null ) {
+                        parseClassNames = parseClassNamesRewriter != null || parseClassNamesQualified;
+                    }
                     if( parseClassNames ) {
                         var ambientDefinitionFile = library.ambientDefinitionFile;
                         if( ambientDefinitionFile && grunt.file.exists(ambientDefinitionFile) ) {
@@ -246,11 +252,13 @@ module.exports = function(grunt) {
                                     currentModule = name;
                                 } else {
                                     grunt.log.writeln("found "+type+" "+name+" in module "+currentModule);
-                                    classNames.push({
-                                        from: name,
-                                        to: name,
-                                        moduleName: currentModule
-                                    });
+                                    if( !parseClassNamesQualified ) {
+                                        classNames.push({
+                                            from: name,
+                                            to: name,
+                                            moduleName: currentModule
+                                        });
+                                    }
                                     classNames.push({
                                         from: currentModule + '.' + name,
                                         to: name,
@@ -268,6 +276,9 @@ module.exports = function(grunt) {
                     if( classNames ) {
                         for( var j in classNames ) {
                             var className = classNames[j];
+                            if( parseClassNamesRewriter ) {
+                                className = parseClassNamesRewriter(className);
+                            }
                             var froms;
                             var to = variableName;
                             var classModuleName = className.moduleName;
@@ -303,12 +314,14 @@ module.exports = function(grunt) {
                             for( var k in froms ) {
                                 var from = froms[k];
                                 var escaped = from.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-                                var regex = new RegExp('(\r|\n|.)' + escaped + '.', 'g');
-                                src = src.replace(regex, function(v) {
+                                var regex = new RegExp('(\r|\n|.)' + escaped + '(\r|\n|.)', 'g');
+
+                                src = src.replace(regex, function (v) {
                                     // ensure white space is on both sides of value
                                     var first = v.charAt(0);
                                     var last = v.charAt(v.length - 1);
                                     var result;
+
                                     if( localClassNameStartValues.indexOf(first) >= 0 && localClassNameEndValues.indexOf(last) >= 0 ) {
                                         result = first + to + last;
                                     } else {
@@ -320,12 +333,27 @@ module.exports = function(grunt) {
                         }
                     }
                     // add the includes
-                    prefix += "import " + variableName+ " = require('"
-                    var local = library.local;
-                    if( local ) {
-                        prefix += "./";
+                    var unsupportedPlatform = false;
+                    if( unsupportedPlatforms ) {
+                        for( var i in unsupportedPlatforms ) {
+                            var platform = unsupportedPlatforms[i];
+                            if( platform == process.platform ) {
+                                unsupportedPlatform = true;
+                                break;
+                            }
+                        }
                     }
-                    prefix += requireName + "');" + os.EOL;
+                    // null it out, it's up to the application code to check if this is null though
+                    if( unsupportedPlatform ) {
+                        prefix += "var " + variableName + " = null;" + os.EOL;
+                    } else {
+                        prefix += "import " + variableName + " = require('"
+                        var local = library.local;
+                        if( local ) {
+                            prefix += "./";
+                        }
+                        prefix += requireName + "');" + os.EOL;
+}
                 }
 
                 src = prefix + src;
