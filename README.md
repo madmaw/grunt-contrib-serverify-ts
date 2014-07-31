@@ -71,6 +71,11 @@ grunt.initConfig({
                         moduleName: "Sibling.Project",
                         variableName: "sp",
                         parseClassNames: true
+                    },
+                    {
+                        requireName: "node_xslt",
+                        variableName: "xslt",
+                        unsupportedPlatforms: ['win32']
                     }
                 ],
                 libraryDestDir: "build/commonjs"
@@ -166,5 +171,10 @@ Defaults to the global moduleName is not specified here.
 Type: `boolean`
 Default value: `false`
 
-Attempt to parse the class/interface/function/module names out of the specified ambient definition file instead of specifying them. Assumes
-a fairly rigid coding style.
+Attempt to parse the class/interface/function/module names out of the specified ambient definition file instead of specifying them. Assumes a fairly rigid coding style.
+
+##### options.libraries.unsupportedPlatforms
+Type: `array of string`
+Default value: `[]`
+
+If you do a build on an unsupported platform, instead of generating `import x = require('x')` serverify will generate `var x = null`. It's up to the application code to check for null module names when using non-cross-platform libraries. You should also list the library as being an "optionalDependency" in your package.json file otherwise npm will probably complain it can't build the library. Currently there is no support for doing a build for a supported platform on an unsupported platform. 
